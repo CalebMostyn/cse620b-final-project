@@ -20,6 +20,6 @@ project/
 
 ## Data
 Training data is sourced from:
-- [Landsat 8]{https://landsat.gsfc.nasa.gov/satellites/landsat-8/}
-- [MERRA-2]{https://gmao.gsfc.nasa.gov/reanalysis/merra-2/}
-- [MODIS]{https://modis.gsfc.nasa.gov/data/}
+- [Landsat 8](https://landsat.gsfc.nasa.gov/satellites/landsat-8/)
+- [MERRA-2](https://gmao.gsfc.nasa.gov/reanalysis/merra-2/)
+- [MODIS](https://modis.gsfc.nasa.gov/data/)
