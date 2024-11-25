@@ -1,6 +1,11 @@
 # cse620b-final-project
 Random Forest Model for Identifying Wildfire Risk from GIS and Remote Sensing Data 
 
+## Requirements
+```
+conda install --file requirements.txt
+```
+
 ## Project Structure
 ```
 project/
@@ -15,6 +20,7 @@ project/
 │   └── model.py                        # Trains a Random Forest on Training Data Set
 ├── model/                          # Model Files
 ├── LICENSE                         # MIT License
+├── requirements.txt                # Project Requirements
 └── README.md                       # Project Description
 ```
 
