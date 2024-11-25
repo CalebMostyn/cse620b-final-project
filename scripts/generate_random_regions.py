@@ -14,7 +14,7 @@ import geopandas as gpd
 
 # Constants
 WINDOW_SIZE = 3  # 3 km (30m spatial resolution, 100x100 pixel images)
-RESULT_PATH = "../data/source_data.txt"  # File path to save the results
+RESULT_PATH = "../data/source_data/source_data.txt"  # File path to save the results
 US_SHAPEFILE_PATH = "../data/shapefile/cb_2018_us_nation_5m.zip" # Shapefile representing US borders
 NUM_OBSERVATIONS = 200 # Should ideally be at least 100 times the types of data we are training on
 MIN_REGION_WIDTH = 10 # Bounding box for a region will be no less than this times the window size (width or height)
