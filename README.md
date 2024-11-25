@@ -11,7 +11,7 @@ conda install --file requirements.txt
 project/
 ├── data/
 │   ├── source_data/                    # Larger Source Files
-│   │   └── source_data.txt             # Definition of Data Source Regions
+│   │   └── source_data.txt             # Definition of Data Source Regions (lat, long)
 │   ├── shapefile/                      # Shapefile for US Boundaries
 │   └── training_data/                  # N Observations Split into Individual Folders Containing all Images
 │       ├── data_point_0/                   # Data Files for Observation 0
