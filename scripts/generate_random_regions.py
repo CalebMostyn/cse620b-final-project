@@ -8,23 +8,46 @@
 import random
 import math
 from datetime import datetime, timedelta
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, box
 import geopandas as gpd
 
 
 # Constants
 WINDOW_SIZE = 3  # 3 km (30m spatial resolution, 100x100 pixel images)
 RESULT_PATH = "../data/source_data.txt"  # File path to save the results
-SHAPEFILE_PATH = "../data/shapefile/cb_2018_us_nation_5m.zip" # Shapefile representing US borders
-NUM_OBSERVATIONS = 600 # Should ideally be at least 100 times the types of data we are training on
-MAX_REGION_WIDTH = 10 # Bounding box for a region will be no more than this times the window size (width or height)
+US_SHAPEFILE_PATH = "../data/shapefile/cb_2018_us_nation_5m.zip" # Shapefile representing US borders
+NUM_OBSERVATIONS = 200 # Should ideally be at least 100 times the types of data we are training on
+MIN_REGION_WIDTH = 10 # Bounding box for a region will be no less than this times the window size (width or height)
+MAX_REGION_WIDTH = 15 # Bounding box for a region will be no more than this times the window size (width or height)
+MERRA_BOUNDS = [(-123.925, 52.925), (-89.025, 25.065)] # Bounds of the 1km resolution MERRA data
 
 # Load the U.S. shapefile
 def load_us_boundary():
     """Loads the U.S. boundary polygon from a shapefile."""
-    gdf = gpd.read_file(SHAPEFILE_PATH)
+    gdf = gpd.read_file(US_SHAPEFILE_PATH)
     us_polygon = gdf.unary_union  # Combine all geometries into one
-    return us_polygon
+    return clip_polygon_to_rectangle(us_polygon, MERRA_BOUNDS[0], MERRA_BOUNDS[1])
+
+def clip_polygon_to_rectangle(polygon, top_left, bottom_right):
+    """
+    Clips the given polygon to a rectangle defined by top-left and bottom-right coordinates.
+    
+    Args:
+        polygon (shapely.geometry.Polygon): The polygon to be clipped.
+        top_left (tuple): Coordinates (lon, lat) of the top-left corner of the rectangle.
+        bottom_right (tuple): Coordinates (lon, lat) of the bottom-right corner of the rectangle.
+        
+    Returns:
+        shapely.geometry.Polygon: The clipped polygon.
+    """
+    # Create a bounding box polygon
+    minx, maxy = top_left
+    maxx, miny = bottom_right
+    bounding_box = box(minx, miny, maxx, maxy)
+    
+    # Clip the polygon
+    clipped_polygon = polygon.intersection(bounding_box)
+    return clipped_polygon
 
 def generate_random_coordinate_within_polygon(polygon):
     """Generates a random coordinate within a given polygon."""
@@ -39,8 +62,8 @@ def generate_random_coordinate_within_polygon(polygon):
 def create_rectangle(window_size,polygon):
     """Creates a rectangle with side lengths as multiples of `window_size`."""
     lat, lon = generate_random_coordinate_within_polygon(polygon)
-    width = random.randint(1, MAX_REGION_WIDTH) * window_size
-    height = random.randint(1, MAX_REGION_WIDTH) * window_size
+    width = random.randint(MIN_REGION_WIDTH, MAX_REGION_WIDTH) * window_size
+    height = random.randint(MIN_REGION_WIDTH, MAX_REGION_WIDTH) * window_size
     
     # Convert width and height into approximate degree offsets
     lat_offset = height / 111  # Approximation: 1 degree latitude ~ 111 km
