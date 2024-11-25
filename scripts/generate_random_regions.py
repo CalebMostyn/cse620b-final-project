@@ -8,30 +8,37 @@
 import random
 import math
 from datetime import datetime, timedelta
+from shapely.geometry import Point, Polygon
+import geopandas as gpd
+
 
 # Constants
 WINDOW_SIZE = 3  # 3 km (30m spatial resolution, 100x100 pixel images)
 RESULT_PATH = "../data/source_data.txt"  # File path to save the results
+SHAPEFILE_PATH = "../data/shapefile/cb_2018_us_nation_5m.zip" # Shapefile representing US borders
 NUM_OBSERVATIONS = 600 # Should ideally be at least 100 times the types of data we are training on
 MAX_REGION_WIDTH = 10 # Bounding box for a region will be no more than this times the window size (width or height)
 
-# Approximate bounding box for the United States (latitude, longitude ranges)
-USA_BOUNDS = {
-    "min_lat": 24.396308,  # Southernmost point
-    "max_lat": 49.384358,  # Northernmost point
-    "min_lon": -125.0,     # Westernmost point
-    "max_lon": -66.93457   # Easternmost point
-}
+# Load the U.S. shapefile
+def load_us_boundary():
+    """Loads the U.S. boundary polygon from a shapefile."""
+    gdf = gpd.read_file(SHAPEFILE_PATH)
+    us_polygon = gdf.unary_union  # Combine all geometries into one
+    return us_polygon
 
-def generate_random_coordinate():
-    """Generates a random latitude and longitude within the USA bounds."""
-    lat = random.uniform(USA_BOUNDS["min_lat"], USA_BOUNDS["max_lat"])
-    lon = random.uniform(USA_BOUNDS["min_lon"], USA_BOUNDS["max_lon"])
-    return lat, lon
+def generate_random_coordinate_within_polygon(polygon):
+    """Generates a random coordinate within a given polygon."""
+    minx, miny, maxx, maxy = polygon.bounds
+    while True:
+        lat = random.uniform(miny, maxy)
+        lon = random.uniform(minx, maxx)
+        point = Point(lon, lat)
+        if polygon.contains(point):
+            return lat, lon
 
-def create_rectangle(window_size):
+def create_rectangle(window_size,polygon):
     """Creates a rectangle with side lengths as multiples of `window_size`."""
-    lat, lon = generate_random_coordinate()
+    lat, lon = generate_random_coordinate_within_polygon(polygon)
     width = random.randint(1, MAX_REGION_WIDTH) * window_size
     height = random.randint(1, MAX_REGION_WIDTH) * window_size
     
@@ -72,9 +79,10 @@ def save_rectangles(rectangles, file_path):
 def main():
     total_num_tiles = 0
     rectangles = []
+    us_polygon = load_us_boundary()
 
     while total_num_tiles < NUM_OBSERVATIONS:
-        rectangle, width, height = create_rectangle(WINDOW_SIZE)
+        rectangle, width, height = create_rectangle(WINDOW_SIZE, us_polygon)
         print(f"Width - {width} : Height - {height}")
         num_tiles = (math.floor((width - WINDOW_SIZE) / (WINDOW_SIZE / 2)) + 1) * \
                     (math.floor((height - WINDOW_SIZE) / (WINDOW_SIZE / 2)) + 1)

@@ -10,18 +10,19 @@ conda install --file requirements.txt
 ```
 project/
 ├── data/
-│   ├── source_data.txt           # Definition of Data Source Regions
+│   ├── source_data.txt                 # Definition of Data Source Regions
+│   ├── shapefile/                      # Shapefile for US Boundaries
 │   ├── data_point_0/                   # Data Files for Observation 0
 │   ├── .../                            # ...
 │   └── data_point_n/                   # Data Files for Observation N
-├── scripts/                        # Python Scripts
+├── scripts/                            # Python Scripts
 │   ├── generate_random_regions.py      # Script to Randomly Generate Regions for Data
 │   ├── make_training_set.py            # Script Break Data Regions into N Observations
 │   └── model.py                        # Trains a Random Forest on Training Data Set
-├── model/                          # Model Files
-├── LICENSE                         # MIT License
-├── requirements.txt                # Project Requirements
-└── README.md                       # Project Description
+├── model/                              # Model Files
+├── LICENSE                             # MIT License
+├── requirements.txt                    # Project Requirements
+└── README.md                           # Project Description
 ```
 
 ## Data
