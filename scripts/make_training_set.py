@@ -12,7 +12,7 @@ import os
 import numpy as np
 import tifffile
 
-OUTPUT_DIR = '../data'  # Output directory
+OUTPUT_DIR = '../data/training_data'  # Output directory
 WINDOW_SIZE = 100  # Window size for tiles (100 x 100)
 
 def split_image_into_tiles(image_path, image_names, window_size, output_dir):

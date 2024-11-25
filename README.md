@@ -13,9 +13,10 @@ project/
 │   ├── source_data/                    # Larger Source Files
 │   │   └── source_data.txt             # Definition of Data Source Regions
 │   ├── shapefile/                      # Shapefile for US Boundaries
-│   ├── data_point_0/                   # Data Files for Observation 0
-│   ├── .../                            # ...
-│   └── data_point_n/                   # Data Files for Observation N
+│   └── training_data/                  # N Observations Split into Individual Folders Containing all Images
+│       ├── data_point_0/                   # Data Files for Observation 0
+│       ├── .../                            # ...
+│       └── data_point_n/                   # Data Files for Observation N
 ├── scripts/                            # Python Scripts
 │   ├── generate_random_regions.py      # Script to Randomly Generate Regions for Data
 │   ├── make_training_set.py            # Script Break Data Regions into N Observations
