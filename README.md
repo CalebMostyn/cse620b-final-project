@@ -12,8 +12,7 @@ project/
 ├── scripts/                        # Python Scripts
 │   ├── generate_random_regions.py      # Script to Randomly Generate Regions for Data
 │   ├── make_training_set.py            # Script Break Data Regions into N Observations
-│   ├── train_model.py                  # Trains a Random Forest on Training Data Set
-│   └── evaluate_model.py               # Script for Cross-Validation of the Model
+│   └── model.py                        # Trains a Random Forest on Training Data Set
 ├── model/                          # Model Files
 ├── LICENSE                         # MIT License
 └── README.md                       # Project Description
