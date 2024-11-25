@@ -5,6 +5,9 @@
 # data/...
 # data/data_point_n
 
+# Currently set up for a single image per data type we are training on,
+# should likely be modified to do this for all images in a directory, etc
+
 import os
 import numpy as np
 import tifffile
