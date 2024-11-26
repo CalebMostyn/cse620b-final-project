@@ -1,24 +1,58 @@
-# This is the script responsible for creating, training and testing the model.
-# Will rely on make_training_set.py in order to create a dataset of sample points
-# from the corresponding datasets.
+import os
+import glob
+import numpy as np
+import rasterio
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from pathlib import Path
+import matplotlib.pyplot as plt
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
+data_path = "../data/training_data"
+results_path = "../results"
 
-# Change based off of the labels given to each classifier
-X = data[['NDVI', 'NDMI', 'BurnAreaIndex', 'LandSurfaceTemp', 'AirTemp', 'Humidity', 'BurnedArea_MODIS', 'VI_MODIS']]
-y = data['Wildfire']
+os.makedirs(results_path, exist_ok=True)
 
-# Change based off of the % split between train/test data from the dataset
-test_perc = 0.3
+data = []
 
-# Split data and train model
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_perc, random_state=0)
-model = RandomForestClassifier(n_estimators=100, random_state=0)
-model.fit(X_train, y_train)
+# Load and preprocess data
+print("Loading and preprocessing data...")
+for sub_dir in sorted(os.listdir(data_path)):
+    sub_dir_path = os.path.join(data_path, sub_dir)
 
-# Example evaluations of model
-y_pred = model.predict(X_test)
-print(confusion_matrix(y_test, y_pred))
-print(classification_report(y_test, y_pred)
+    if os.path.isdir(sub_dir_path):
+        humidity_file = glob.glob(os.path.join(sub_dir_path, "humidity_*.tif"))
+        temperature_file = glob.glob(os.path.join(sub_dir_path, "temperature_*.tif"))
+
+        if humidity_file and temperature_file:
+            with rasterio.open(humidity_file[0]) as hum_src:
+                humidity_data = hum_src.read(1).flatten()
+            
+            with rasterio.open(temperature_file[0]) as temp_src:
+                temperature_data = temp_src.read(1).flatten()
+            features = np.concatenate((humidity_data, temperature_data))
+            data.append(features)
+
+data = np.array(data)
+
+print("Applying PCA...")
+pca = PCA(n_components=2)
+data_pca = pca.fit_transform(data)
+
+print("Applying K-Means clustering...")
+kmeans = KMeans(n_clusters=3, random_state=0)
+clusters = kmeans.fit_predict(data_pca)
+results_file = os.path.join(results_path, "clustering_results.txt")
+with open(results_file, "w") as f:
+    for i, cluster in enumerate(clusters):
+        f.write(f"Subdirectory: {i}, Cluster: {cluster}\n")
+
+# Plot clusters (optional, if PCA was used)
+plt.scatter(data_pca[:, 0], data_pca[:, 1], c=clusters, cmap='viridis')
+plt.title("Clustering Results")
+plt.xlabel("PCA Component 1")
+plt.ylabel("PCA Component 2")
+plt.colorbar(label="Cluster")
+plt.savefig(os.path.join(results_path, "clustering_plot.png"))
+plt.show()
+
+print("Clustering results saved to:", results_file)
