@@ -13,13 +13,14 @@ project/
 │   ├── source_data/                    # Larger Source Files
 │   │   └── source_data.txt             # Definition of Data Source Regions (lat, long)
 │   ├── shapefile/                      # Shapefile for US Boundaries
-│   └── training_data/                  # N Observations Split into Individual Folders Containing all Images
+│   └── training_data/                  # N Observations Split into Individual Folders
 │       ├── data_point_0/                   # Data Files for Observation 0
 │       ├── .../                            # ...
 │       └── data_point_n/                   # Data Files for Observation N
 ├── scripts/                            # Python Scripts
 │   ├── generate_random_regions.py      # Script to Randomly Generate Regions for Data
-│   ├── make_training_set.py            # Script Break Data Regions into N Observations
+│   ├── make_training_set.py            # Script to Break Data Regions into N Observations
+│   ├── resample.py                     # Script to Resample Low Resolution Data
 │   └── model.py                        # Trains a Random Forest on Training Data Set
 ├── model/                              # Model Files
 ├── LICENSE                             # MIT License
