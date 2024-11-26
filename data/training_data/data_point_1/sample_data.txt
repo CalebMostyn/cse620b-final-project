@@ -1,3 +1,0 @@
-This would be where images, data files, etc will go for a single data point, i.e. one region of the US
-
-Each selected region to sample data from will have its own folder, numbered incrementally: data_point_0 ... data_point_n
