@@ -1,6 +1,8 @@
 # cse620b-final-project
 Random Forest Model for Identifying Wildfire Risk from GIS and Remote Sensing Data 
 
+Ryan Holthouse, Caleb Mostyn, Julia Loncala, Seth Peppo
+
 ## Requirements
 ```
 conda install --file requirements.txt
