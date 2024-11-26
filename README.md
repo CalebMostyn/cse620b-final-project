@@ -18,7 +18,7 @@ project/
 │       ├── .../                            # ...
 │       └── data_point_n/                   # Data Files for Observation N
 ├── notebooks/                            # Jupyter Notebooks
-│   ├── merra_work.ipynb                # Notebook for Isolating Source Region from US MERRA Data
+│   └── merra_work.ipynb                # Notebook for Isolating Source Region from US MERRA Data
 ├── scripts/                            # Python Scripts
 │   ├── generate_random_regions.py      # Script to Randomly Generate Regions for Data
 │   ├── make_training_set.py            # Script to Break Data Regions into N Observations
