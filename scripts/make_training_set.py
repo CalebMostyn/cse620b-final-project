@@ -1,21 +1,30 @@
 import os
 import numpy as np
 import rasterio
+import argparse
 from rasterio.windows import Window
 import matplotlib.pyplot as plt
 
-OUTPUT_DIR = '../data/training_data'  # Output directory
-WINDOW_SIZE = 100  # Window size for tiles (100 x 100)
 
-def split_image_into_tiles(image_path, image_name, window_size, output_dir):
+def split_image_into_tiles(image_path, image_name, window_size, output_dir, overlap):
+    """
+    Splits an image into tiles with a specified overlap percentage.
+
+    Args:
+        image_path (str): Path to the input image.
+        image_name (str): Name prefix for the output tiles.
+        window_size (int): Size of each square tile (in pixels).
+        output_dir (str): Directory where the tiles will be saved.
+        overlap (float): Overlap percentage between tiles (range [0, 1]).
+    """
     # Open the image using rasterio
     with rasterio.open(image_path) as src:
         # Get the image dimensions
         image_width = src.width
         image_height = src.height
 
-        # Calculate the number of tiles (with overlap)
-        step = window_size // 2  # 50% overlap
+        # Calculate the step size based on the overlap
+        step = int(window_size * (1 - overlap))
 
         # Ensure the output directory exists
         os.makedirs(output_dir, exist_ok=True)
@@ -52,17 +61,17 @@ def split_image_into_tiles(image_path, image_name, window_size, output_dir):
                 print(f"Saved tile {tile_index} at {tile_filename}")
                 tile_index += 1
 
+def main():
+    parser = argparse.ArgumentParser(description="Split large image into smaller, overlapping tiles.")
+    parser.add_argument('--source_path', required=True, help="Source image file.")
+    parser.add_argument('--dest_name', required=True, help="Name for saved tile image files ([name]_[x]_[y].tif).")
+    parser.add_argument('--dest_dir', default='../data/training_data', help="Folder for Tiled Images to be Saved to")
+    parser.add_argument('--window_size', default=100, help="Pixels in tiled images, [window_size] by [window_size]")
+    parser.add_argument('--overlap', default=0.5, help="Percentage of tile overlap, in the range [0,1]")
+    args = parser.parse_args()
+
+    # Tile the images
+    split_image_into_tiles(args.source_path, args.dest_name, args.window_size, args.dest_dir, args.overlap)
+
 if __name__ == "__main__":
-    # Set the parameters
-    temp_path = '../data/source_data/temperature_new.tif'  # Input image file
-    temp_name = "temperature"
-
-    # Tile the temperature images
-    split_image_into_tiles(temp_path, temp_name, WINDOW_SIZE, OUTPUT_DIR)
-
-    # Set the parameters
-    hum_path = '../data/source_data/humidity_new.tif'  # Input image file
-    hum_name = "humidity"
-
-    # Tile the humidity images
-    split_image_into_tiles(hum_path, hum_name, WINDOW_SIZE, OUTPUT_DIR)
+    main()
