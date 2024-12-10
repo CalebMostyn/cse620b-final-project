@@ -16,9 +16,10 @@ import geopandas as gpd
 WINDOW_SIZE = 3  # 3 km (30m spatial resolution, 100x100 pixel images)
 RESULT_PATH = "../data/source_data/source_data.txt"  # File path to save the results
 US_SHAPEFILE_PATH = "../data/shapefiles/cb_2018_us_nation_5m.zip" # Shapefile representing US borders
-NUM_OBSERVATIONS = 200 # Should ideally be at least 100 times the types of data we are training on
-MIN_REGION_WIDTH = 10 # Bounding box for a region will be no less than this times the window size (width or height)
-MAX_REGION_WIDTH = 15 # Bounding box for a region will be no more than this times the window size (width or height)
+FIRE_SHAPEFILE_PATH = "../data/shapefiles/mtbs_perimeter_data.zip" # Shapefile representing US borders
+NUM_OBSERVATIONS = 5000 # Should ideally be at least 100 times the types of data we are training on
+MIN_REGION_WIDTH = 15 # Bounding box for a region will be no less than this times the window size (width or height)
+MAX_REGION_WIDTH = 20 # Bounding box for a region will be no more than this times the window size (width or height)
 MERRA_BOUNDS = [(-123.925, 52.925), (-89.025, 25.065)] # Bounds of the 1km resolution MERRA data
 
 # Load the U.S. shapefile
@@ -26,7 +27,15 @@ def load_us_boundary():
     """Loads the U.S. boundary polygon from a shapefile."""
     gdf = gpd.read_file(US_SHAPEFILE_PATH)
     us_polygon = gdf.unary_union  # Combine all geometries into one
+    print(f"Loaded US Data")
     return clip_polygon_to_rectangle(us_polygon, MERRA_BOUNDS[0], MERRA_BOUNDS[1])
+
+def load_fire_boundaries():
+    """Loads the fire boundaries into one polygon from a shapefile."""
+    gdf = gpd.read_file(FIRE_SHAPEFILE_PATH)
+    fire_polygon = gdf.unary_union  # Combine all geometries into one
+    print(f"Loaded Fire Data")
+    return fire_polygon
 
 def clip_polygon_to_rectangle(polygon, top_left, bottom_right):
     """
@@ -59,23 +68,34 @@ def generate_random_coordinate_within_polygon(polygon):
         if polygon.contains(point):
             return lat, lon
 
-def create_rectangle(window_size,polygon):
-    """Creates a rectangle with side lengths as multiples of `window_size`."""
-    lat, lon = generate_random_coordinate_within_polygon(polygon)
-    width = random.randint(MIN_REGION_WIDTH, MAX_REGION_WIDTH) * window_size
-    height = random.randint(MIN_REGION_WIDTH, MAX_REGION_WIDTH) * window_size
-    
-    # Convert width and height into approximate degree offsets
-    lat_offset = height / 111  # Approximation: 1 degree latitude ~ 111 km
-    lon_offset = width / (111 * abs(math.cos(math.radians(lat))))  # Adjust for longitude shrinkage
-    
-    # Define the rectangle corners
-    top_left = (lat, lon)
-    top_right = (lat, lon + lon_offset)
-    bottom_left = (lat - lat_offset, lon)
-    bottom_right = (lat - lat_offset, lon + lon_offset)
-    
-    return [top_left, top_right, bottom_left, bottom_right], width, height
+def create_rectangle(window_size, generate_polygon, test_polygon):
+    """Creates a rectangle with side lengths as multiples of `window_size` that intersects with `test_polygon`."""
+    while True:
+        # Step 1: Generate a random coordinate within the `generate_polygon`
+        lat, lon = generate_random_coordinate_within_polygon(generate_polygon)
+        
+        # Step 2: Define random width and height
+        width = random.randint(MIN_REGION_WIDTH, MAX_REGION_WIDTH) * window_size
+        height = random.randint(MIN_REGION_WIDTH, MAX_REGION_WIDTH) * window_size
+        
+        # Step 3: Convert width and height into approximate degree offsets
+        lat_offset = height / 111  # Approximation: 1 degree latitude ~ 111 km
+        lon_offset = width / (111 * abs(math.cos(math.radians(lat))))  # Adjust for longitude shrinkage
+        
+        # Step 4: Define the rectangle corners
+        top_left = (lon, lat)
+        top_right = (lon, lat + lat_offset)
+        bottom_left = (lon - lon_offset, lat)
+        bottom_right = (lon - lon_offset, lat + lat_offset)
+        
+        # Step 5: Create the rectangle polygon
+        rectangle = Polygon([top_left, top_right, bottom_right, bottom_left])
+        
+        # Step 6: Check if the rectangle intersects with the `test_polygon`
+        if rectangle.intersects(test_polygon):
+            return [top_left, top_right, bottom_left, bottom_right], width, height
+        
+        # print(f"Bad Rectangle, Retrying")
 
 def convert_days_to_date(days):
     """Converts the number of days since Jan 1, 2023 to a formatted date string."""
@@ -97,15 +117,14 @@ def save_rectangles(rectangles, file_path):
             rect_str += f"{convert_days_to_date(random_date):<10}" 
             f.write(rect_str + "\n")
 
-
-
 def main():
     total_num_tiles = 0
     rectangles = []
     us_polygon = load_us_boundary()
+    fire_polygon = load_fire_boundaries()
 
     while total_num_tiles < NUM_OBSERVATIONS:
-        rectangle, width, height = create_rectangle(WINDOW_SIZE, us_polygon)
+        rectangle, width, height = create_rectangle(WINDOW_SIZE, us_polygon, fire_polygon)
         print(f"Width - {width} : Height - {height}")
         num_tiles = (math.floor((width - WINDOW_SIZE) / (WINDOW_SIZE / 2)) + 1) * \
                     (math.floor((height - WINDOW_SIZE) / (WINDOW_SIZE / 2)) + 1)
