@@ -14,12 +14,14 @@ project/
 ├── data/
 │   ├── source_data/                    # Larger Source Files
 │   │   └── source_data.txt             # Definition of Data Source Regions (lat, long)
-│   ├── shapefile/                      # Shapefile for US Boundaries
+│   ├── shapefiles/                     # Shapefiles
+│   │   ├── cb_2018_us_nation_5m.zip    # United States Borders
+│   │   └── mtbs_perimeter_data.zip     # Burned Area Regions
 │   └── training_data/                  # N Observations Split into Individual Folders
-│       ├── data_point_0/                   # Data Files for Observation 0
-│       ├── .../                            # ...
-│       └── data_point_n/                   # Data Files for Observation N
-├── notebooks/                            # Jupyter Notebooks
+│       ├── data_point_0/               # Data Files for Observation 0
+│       ├── .../                        # ...
+│       └── data_point_n/               # Data Files for Observation N
+├── notebooks/                          # Jupyter Notebooks
 │   └── merra_work.ipynb                # Notebook for Isolating Source Region from US MERRA Data
 ├── scripts/                            # Python Scripts
 │   ├── generate_random_regions.py      # Script to Randomly Generate Regions for Data
