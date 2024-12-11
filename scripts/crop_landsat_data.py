@@ -1,49 +1,45 @@
 import rasterio
-import matplotlib.pyplot as plt
-from shapely.geometry import Polygon
 from rasterio.mask import mask
-from pyproj import CRS
-from shapely.ops import transform
-import geopandas as gpd
+from shapely.geometry import box
+import fiona
+from fiona.crs import from_epsg
 
-def crop_image(path, roi_polygon):
-    # Open the TIFF file and get the CRS
-    with rasterio.open(path) as src:
-        # Check the CRS of the raster
-        raster_crs = CRS.from_wkt(src.crs.wkt)
+def crop_image(tif_file, output_file, min_lon, min_lat, max_lon, max_lat):
+    # Open the GeoTIFF file
+    with rasterio.open(tif_file) as src:
+        # Check CRS of the file
+        src_crs = src.crs
+        print(f"CRS of the GeoTIFF: {src_crs}")
 
-        # Reproject the polygon to match the raster CRS (if different)
-        if raster_crs != CRS.from_epsg(4326):
-            # Use geopandas for CRS transformation
-            geo_df = gpd.GeoDataFrame([{'geometry': roi_polygon}], crs="EPSG:4326")
-            geo_df = geo_df.to_crs(raster_crs)
-            roi_polygon = geo_df.geometry[0]
+        # Create a bounding box in lon/lat
+        bbox = box(min_lon, min_lat, max_lon, max_lat)
 
-        # Apply a small buffer to the polygon to ensure full coverage
-        roi_polygon = roi_polygon.buffer(0.0001)  # Adjust the buffer size as necessary
+        # Transform bounding box to the source CRS if it's different
+        if src_crs.is_geographic:  # CRS is already lon/lat
+            bbox_in_crs = bbox
+        else:
+            from pyproj import Transformer
+            transformer = Transformer.from_crs("EPSG:4326", src_crs)  # EPSG:4326 is WGS84
+            x_min, y_min = transformer.transform(min_lat, min_lon)
+            x_max, y_max = transformer.transform(max_lat, max_lon)
+            bbox_in_crs = box(x_min, y_min, x_max, y_max)
 
-        # Mask the raster data with the polygon to extract the region of interest
-        geo_json = roi_polygon.__geo_interface__
-        out_image, out_transform = mask(src, [geo_json], crop=True, all_touched=True)
+        # Mask the raster with the bounding box
+        geojson_geom = [bbox_in_crs.__geo_interface__]
+        cropped_image, cropped_transform = mask(src, geojson_geom, crop=True)
 
-        # Squeeze out the unnecessary dimension for the number of bands
-        out_image = out_image.squeeze(0)  # Remove the first dimension if it's 1
-
-        # Define metadata for the new TIFF file
+        # Update metadata for the cropped image
         out_meta = src.meta.copy()
         out_meta.update({
-            "driver": "GTiff",  # Output file format
-            "count": 1,  # Single-band image
-            "dtype": out_image.dtype,  # Data type
-            "crs": src.crs,  # Coordinate Reference System
-            "transform": out_transform,  # Affine transform for the new image
-            "width": out_image.shape[1],  # New image width
-            "height": out_image.shape[0],  # New image height
+            "driver": "GTiff",
+            "height": cropped_image.shape[1],
+            "width": cropped_image.shape[2],
+            "transform": cropped_transform
         })
 
-        # Save the masked image as a new TIFF file
-        with rasterio.open(path, "w", **out_meta) as dest:
-            dest.write(out_image, 1)  # Write the first band of the masked image
+        # Save the cropped GeoTIFF
+        with rasterio.open(output_file, "w", **out_meta) as dest:
+            dest.write(cropped_image)
 
 # Coordinates (WGS84 / EPSG:4326)  
 top_left = (-103.6670, 33.5393) 
@@ -52,15 +48,18 @@ bottom_left = (-103.6670, 32.7203)
 bottom_right = (-102.6837, 32.7203)
 
 # Create a polygon for the region of interest (ROI)
-roi_polygon = Polygon([top_left, top_right, bottom_right, bottom_left, top_left])
+# roi_polygon = Polygon([top_left, top_right, bottom_right, bottom_left, top_left])
 
 ndvi_path = '../data/source_data/ndvi.TIF'  
 ndmi_path = '../data/source_data/ndmi.TIF'  
 bai_path = '../data/source_data/bai.TIF'  
 land_temp_path = '../data/source_data/land_temp.TIF'  
 
+min_lon, max_lat = top_left
+max_lon, min_lat = bottom_right
 
-crop_image(ndvi_path, roi_polygon)
-crop_image(ndmi_path, roi_polygon)
-crop_image(bai_path, roi_polygon)
-crop_image(land_temp_path, roi_polygon)
+
+crop_image(ndvi_path, ndvi_path,min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
+crop_image(ndmi_path, ndmi_path,min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
+crop_image(bai_path, bai_path,min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
+crop_image(land_temp_path, land_temp_path,min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)

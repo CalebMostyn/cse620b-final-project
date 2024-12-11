@@ -5,67 +5,56 @@ from shapely.geometry import box
 import numpy as np
 import os
 
-def rasterize_shapefile(gdf, lon_min, lon_max, lat_min, lat_max, resolution_meters, output_tif_path):
+def rasterize_shapefile(gdf, existing_tif_path, output_tif_path):
     # Ensure the output directory exists
     output_dir = os.path.dirname(output_tif_path)
     os.makedirs(output_dir, exist_ok=True)
     
-    # Define the bounding box for the raster
+    # Open the existing tif to get its metadata
+    with rasterio.open(existing_tif_path) as src:
+        # Get metadata from the existing raster
+        transform = src.transform
+        width = src.width
+        height = src.height
+        crs = src.crs
+        
+        # Get the bounds from the existing raster
+        lon_min, lat_min, lon_max, lat_max = src.bounds
+        
+        # Get the resolution of the existing raster
+        resolution_lon = (lon_max - lon_min) / width
+        resolution_lat = (lat_max - lat_min) / height
+    
+    # Reproject the shapefile to match the CRS of the existing raster
+    gdf = gdf.to_crs(crs)
+    
+    # Create the bounding box for the raster (this should match the bounds of the existing raster)
     bbox = box(lon_min, lat_min, lon_max, lat_max)
     
-    # Reproject the shapefile to the same CRS as the bounding box (WGS84 is EPSG:4326)
-    gdf = gdf.to_crs(epsg=4326)
+    # Create the mask for the raster
+    mask = geometry_mask(gdf.geometry, transform=transform, invert=True, out_shape=(height, width))
     
-    # Convert resolution from meters to degrees
-    avg_latitude = (lat_min + lat_max) / 2  # Average latitude for the bounding box
-    meters_per_degree_lat = 111320  # Approximate meters per degree latitude
-    meters_per_degree_lon = 111320 * np.cos(np.radians(avg_latitude))  # Adjust for latitude
+    # Convert the mask to uint8 (0 for no intersection, 1 for intersection)
+    raster_data = np.where(mask, 1, 0)
     
-    resolution_lon = resolution_meters / meters_per_degree_lon
-    resolution_lat = resolution_meters / meters_per_degree_lat
-    
-    # Calculate the number of pixels in both directions
-    width = int((lon_max - lon_min) / resolution_lon)
-    height = int((lat_max - lat_min) / resolution_lat)
-    
-    # Add check to ensure dimensions are positive
-    if width <= 0 or height <= 0:
-        raise ValueError(f"Invalid raster dimensions: width = {width}, height = {height}. Ensure the bounding box is correct and resolution is appropriate.")
-    
-    # Create the transformation (affine matrix)
-    transform = rasterio.transform.from_origin(lon_min, lat_max, resolution_lon, resolution_lat)
-    
-    # Create the raster file and write the data
+    # Write the raster data to the file
     with rasterio.open(output_tif_path, 'w', driver='GTiff', count=1, dtype='uint8',
-                       crs='EPSG:4326', width=width, height=height, transform=transform) as dst:
-        
-        # Create a mask where True (1) represents pixels inside the polygons, False (0) otherwise
-        mask = geometry_mask(gdf.geometry, transform=transform, invert=True, out_shape=(height, width))
-        
-        # Convert the mask to uint8 (0 for no intersection, 1 for intersection)
-        raster_data = np.where(mask, 1, 0)
-        
-        # Write the raster data to the file
+                       crs=crs, width=width, height=height, transform=transform) as dst:
         dst.write(raster_data, 1)
-
+    
     print(f"Rasterized shapefile saved to {output_tif_path}")
 
 # Example Usage
 shapefile_path = "../data/shapefiles/mtbs_perimeter_data.zip"
 # Load the shapefile using geopandas
 gdf = gpd.read_file(shapefile_path)
-print("loaded shapefile")
+print("Loaded shapefile")
 
-top_left = (-103.6670, 33.5393) 
-top_right = (-102.6837, 33.5393)
-bottom_left = (-103.6670, 32.7203)
-bottom_right = (-102.6837, 32.7203)
+# Path to an existing TIFF file
+existing_tif_path = "../data/source_data/land_temp.TIF"
 
-resolution = 30  # 30 meters
-lon_min, lat_max = top_left
-lon_max, lat_min = bottom_right
-output_tif_path = f"../data/source_data/fire_occured.tif"
-rasterize_shapefile(gdf, lon_min, lon_max, lat_min, lat_max, resolution, output_tif_path)
+# Output path for the rasterized shapefile
+output_tif_path = "../data/source_data/fire_occured.tif"
 
-
-
+# Rasterize the shapefile to match the existing TIFF
+rasterize_shapefile(gdf, existing_tif_path, output_tif_path)
