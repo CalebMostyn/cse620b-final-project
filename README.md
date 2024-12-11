@@ -48,7 +48,7 @@ Training data is sourced from:
 The Spatial Resolution of each dataset is as follows:
 - LANDSAT 8: 30m (Visible Spectrum, NIR, SWIR) and 100m (Thermal Data)
 - MERRA 2: 1.1km
-- MODIS: 250m (Land/Cloud/Aerosols Boundaries), 500m (Land/Cloud/Aerosols Properties), 1000m (All Other Bands)
+- MTBS: N/A (Shapely Polygons)
 
 To preserve the detail of the LANDSAT data, it would be ideal to use a resolution of 30m or 100m. For data with higher resolution than the chosen resolution, it will require downsampling, and for data with lower resolution (more of an issue here) it will require upsampling.
 
