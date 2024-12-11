@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 # Data
 data_dir = "../data/training_data" # path of training data
 os.makedirs(data_dir, exist_ok=True)
+test_data_dir = "../data/saved_training_data" # path to save training data
+os.makedirs(test_data_dir, exist_ok=True)
 data_points = 3540 # number of data points in data_dir
 random_seed = 700 # random seed state
 
@@ -65,6 +67,10 @@ features, labels = load_data(data_dir)
 # Train model
 print("Starting model training...", flush=True)
 X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=random_seed)
+# save the test data
+np.save(os.path.join(test_data_dir, "X_test.npy"), X_test)
+np.save(os.path.join(test_data_dir, "y_test.npy"), y_test)
+print(f"Test data saved to: {test_data_dir}")
 rf = RandomForestClassifier(n_estimators=100, random_state=random_seed)
 rf.fit(X_train, y_train)
 
