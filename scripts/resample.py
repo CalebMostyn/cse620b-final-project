@@ -44,7 +44,7 @@ def resample_raster(input_file, output_file, target_resolution):
             dst.write(data)
 
 # Example usage
-input_file = "../data/source_data/fire_occured.tif"  # Path to your input file
-output_file = "../data/source_data/fire_new.tif"  # Path to save the resampled file
+input_file = "../data/source_data/og_humidity.tiff"  # Path to your input file
+output_file = "../data/source_data/humidity.tif"  # Path to save the resampled file
 target_resolution = 30 / 111000  # Convert 30m to degrees (approximately)
 resample_raster(input_file, output_file, target_resolution)
